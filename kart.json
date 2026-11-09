@@ -1,0 +1,44 @@
+{
+  "_forklaring": "Hyllekartet for Tysnes folkebibliotek. Alle mål i cm, med origo i det indre hjørnet oppe til venstre (nordvest) i rom 134. x aukar mot aust, y mot sør. Kvart element har midtpunkt (x, y), lengd (w), djupn (h) og rotasjon (rot, grader). Dobbelhyller har innhald på sideA og sideB; vegghyller, kubar og krybber på sideA. «skjermar» seier kvar infoskjermane står og kva veg du ser når du står framfor dei.",
+
+  "rom": {"breidd": 933, "lengd": 1232, "eining": "cm", "kjelde": "Planteikning 302_A201 (2003)"},
+
+  "skjermar": {
+    "skjerm1": {"namn": "tysnes-infoskjerm (sakprosa)", "x": 870, "y": 160, "ser": "aust"},
+    "skjerm2": {"namn": "tysnes-infoskjerm-2 (engelsk)", "x": 290, "y": 1100, "ser": "vest"}
+  },
+
+  "element": [
+    {"id": "eei6treu", "type": "hylle", "namn": "Skjønnlitteratur vaksen", "x": 549, "y": 22.5, "w": 658, "h": 45, "rot": 0},
+    {"id": "er27jhzc", "type": "hylle", "namn": "Faglitteratur vaksen", "x": 905, "y": 350, "w": 700, "h": 55, "rot": 90},
+    {"id": "eutlanspc", "type": "mobel", "namn": "Utlåns-PC", "x": 30, "y": 310, "w": 140, "h": 60, "rot": 90},
+    {"id": "estolpc", "type": "rund", "namn": "", "x": 82, "y": 310, "w": 45, "h": 45, "rot": 0},
+    {"id": "ekrybbenord", "type": "hylle", "namn": "Krybbe N", "sideA": "Biletbøker", "x": 50, "y": 470, "w": 100, "h": 50, "rot": 0, "merknad": "Biletbokkrybbe nord for hylle 4"},
+    {"id": "ef2ldwyr", "type": "hylle", "namn": "Hylle 4", "sideA": "Biletbøker", "x": 20, "y": 695, "w": 380, "h": 40, "rot": 90},
+    {"id": "e7s030ln", "type": "dobbel", "namn": "Hylle 9", "sideA": "Skjønnlitteratur", "sideB": "Krim", "x": 290, "y": 220, "w": 270, "h": 60, "rot": 0},
+    {"id": "ej6a6wch", "type": "dobbel", "namn": "Hylle 10", "sideA": "Krim", "sideB": "Fantasy / teikneseriar ung/vaksen", "x": 290, "y": 440, "w": 270, "h": 60, "rot": 0},
+    {"id": "eqiu1rqu", "type": "dobbel", "namn": "Hylle 11", "sideA": "Roman ungdom", "sideB": "Barnebøker og fantasy barn", "x": 290, "y": 660, "w": 270, "h": 60, "rot": 0},
+    {"id": "enjf3043", "type": "dobbel", "namn": "Hylle 12", "sideA": "Fakta barn og ungdom", "sideB": "Teikneseriar barn", "x": 545, "y": 557.5, "w": 265, "h": 70, "rot": 90},
+    {"id": "ed6uw1g1", "type": "dobbel", "namn": "Hylle 13", "sideA": "Fakta barn og ungdom", "sideB": "Fakta barn og ungdom", "x": 701, "y": 557.5, "w": 265, "h": 70, "rot": 90},
+    {"id": "eende12", "type": "hylle", "namn": "Ende 12", "sideA": "Noveller", "x": 545, "y": 410, "w": 90, "h": 30, "rot": 0, "merknad": "Lita hylle i nordenden av hylle 12"},
+    {"id": "eende13", "type": "hylle", "namn": "Ende 13", "sideA": "Lyrikk og skodespel", "x": 701, "y": 410, "w": 90, "h": 30, "rot": 0, "merknad": "Lita hylle i nordenden av hylle 13"},
+    {"id": "exeq0ygf", "type": "mobel", "namn": "Skranke?", "x": 840, "y": 810, "w": 160, "h": 75, "rot": 90},
+    {"id": "eautomat", "type": "mobel", "namn": "Utlånsautomat", "x": 757.5, "y": 1030, "w": 65, "h": 130, "rot": 0},
+    {"id": "e924x8wm", "type": "hylle", "namn": "Hylle 8", "sideA": "Tidsskrift", "x": 767.5, "y": 1180, "w": 105, "h": 45, "rot": 90},
+    {"id": "e2j81mxh", "type": "hylle", "namn": "Hylle 7", "sideA": "Andre framandspråk", "x": 365, "y": 1207, "w": 125, "h": 50, "rot": 0},
+    {"id": "eeljmjge", "type": "hylle", "namn": "Kube 1", "sideA": "Lettlest og engelsk barn", "x": 420, "y": 930, "w": 85, "h": 100, "rot": 0, "merknad": "Kvit kube"},
+    {"id": "elkl9trn", "type": "hylle", "namn": "Kube 2", "sideA": "Manga", "x": 505, "y": 1030, "w": 85, "h": 100, "rot": 0, "merknad": "Kvit kube"},
+    {"id": "et87stv6", "type": "dobbel", "namn": "Hylle 19", "sideA": "Skjønnlitteratur", "sideB": "Faglitteratur vaksen", "x": 623, "y": 220, "w": 180, "h": 60, "rot": 0},
+    {"id": "eabk86yn", "type": "vegg", "namn": "Vegg rom 135 (aust)", "x": 243, "y": 1095, "w": 12, "h": 274, "rot": 0},
+    {"id": "ekrybbesor", "type": "hylle", "namn": "Krybbe S", "sideA": "Peikebøker", "x": 243, "y": 925, "w": 70, "h": 70, "rot": 0, "merknad": "Krybbe ved inngangen til barnekroken"},
+    {"id": "ebkvest", "type": "hylle", "namn": "Barnekrok-hylle", "sideA": "Humor, grøss og krim barn", "x": 219, "y": 1100, "w": 250, "h": 35, "rot": 90, "merknad": "På innsida av veggen, i barnekroken"},
+    {"id": "ebkaust", "type": "hylle", "namn": "Hylle aust for barnekrok", "sideA": "Engelsk", "x": 267, "y": 1100, "w": 250, "h": 35, "rot": 90, "merknad": "På utsida av veggen der kontoret var"},
+    {"id": "e135sor", "type": "vegg", "namn": "Vegg rom 135 (sør)", "x": 125, "y": 1238, "w": 250, "h": 13, "rot": 0},
+    {"id": "ebarnekrok", "type": "sone", "namn": "Barnekrok", "x": 121, "y": 1095, "w": 243, "h": 274, "rot": 0, "merknad": "Rom 135, tidlegare kontor. Nordveggen er teken vekk."},
+    {"id": "esofa", "type": "mobel", "namn": "Sofa", "x": 40, "y": 1005, "w": 220, "h": 75, "rot": 90},
+    {"id": "ebord", "type": "rund", "namn": "Bord", "x": 95, "y": 1170, "w": 70, "h": 70, "rot": 0},
+    {"id": "estol1", "type": "rund", "namn": "", "x": 30, "y": 1170, "w": 40, "h": 40, "rot": 0},
+    {"id": "estol2", "type": "rund", "namn": "", "x": 160, "y": 1170, "w": 40, "h": 40, "rot": 0},
+    {"id": "eb2m9cnw", "type": "sone", "namn": "Spelrom", "x": 281, "y": 1404, "w": 552, "h": 308, "rot": 0, "merknad": "Rom 136 (møtesone på teikninga)"}
+  ]
+}

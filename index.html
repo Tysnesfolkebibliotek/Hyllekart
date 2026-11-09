@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="nn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Finn fram – Tysnes folkebibliotek</title>
+<!--
+  Hyllekart for infoskjermane på Tysnes folkebibliotek.
+
+  Viser kartet i kart.json og lyser opp éin del av samlinga om gongen
+  (Krim, Biletbøker, Engelsk …). Innstillingane står i adressa etter #:
+
+    her=skjerm1     Kva skjerm sida står på. Teiknar «Du er her» og snur kartet
+                    slik at retninga du ser mot skjermen, er opp. Utan «her»
+                    står nord opp.
+    tema=fjord      Tema frå infoskjerm/tema.js (kveld, fjord, skog, lys, haust, libry …).
+    skrift=…        Skrift frå infoskjerm/skrifter.js. Utan: temaet si skrift.
+    sek=7           Kor mange sekund kvar del av samlinga blir lyst opp.
+    berre=Krim|Manga  Berre desse delane (skil med |). Utan: alle.
+
+  Fila køyrer i rotasjon.html på skjermane, og svarar på «vis»/«skjul» derifrå.
+-->
+<style>
+  :root {
+    --bakgrunn: #14110f; --tekst: #f5efe6; --dempa: #b8ab98; --aksent: #e8a33d;
+    --aksent-tekst: #1b140c; --brikke: rgba(255,255,255,.10); --spor: rgba(255,255,255,.12);
+    --skrift: "Ubuntu", "DejaVu Sans", "Noto Sans", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; }
+  body { background: var(--bakgrunn); color: var(--tekst); font-family: var(--skrift); overflow: hidden; cursor: none;
+    display: flex; flex-direction: column; }
+
+  header { padding: 5vh 6vw 2vh; flex: none; }
+  .overlinje { font-size: 1.7vh; letter-spacing: .14em; text-transform: uppercase; color: var(--dempa); }
+  h1 { font-family: var(--skrift-overskrift, var(--skrift)); font-weight: var(--vekt-overskrift, 700);
+    font-size: calc(5.2vh * var(--skala-overskrift, 1)); line-height: 1.08; margin-top: .8vh; color: var(--aksent);
+    min-height: 1.1em; transition: opacity .5s; }
+  .kvar { font-size: 2.3vh; color: var(--tekst); margin-top: 1vh; min-height: 1.4em; transition: opacity .5s; }
+  .byt h1, .byt .kvar { opacity: 0; }
+
+  main { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 1.5vw; }
+  svg#kart { width: 100%; height: 100%; display: block; }
+
+  footer { flex: none; display: flex; align-items: flex-end; justify-content: space-between; padding: 2vh 6vw 4vh; }
+  .botnnamn { font-size: 2.8vw; text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
+  .botnnamn b { font-weight: 700; }
+  .teljar { width: 4.6vh; height: 4.6vh; }
+  .teljar circle { fill: none; stroke-width: 3.2; }
+  .hjul-spor { stroke: var(--spor); }
+  #hjul { stroke: var(--aksent); stroke-linecap: round; transform: rotate(-90deg) scaleY(-1); transform-origin: 50% 50%; }
+
+  /* Kartet */
+  .golv { fill: var(--brikke); }
+  .vegg { fill: none; stroke: var(--tekst); stroke-width: 12; stroke-linecap: square; opacity: .85; }
+  .vind { stroke: var(--dempa); stroke-width: 8; opacity: .7; }
+  .dorbue { fill: none; stroke: var(--dempa); stroke-width: 2.5; opacity: .6; }
+  .sjakt { fill: var(--spor); }
+  .info { fill: var(--dempa); font-size: 22px; text-anchor: middle; dominant-baseline: central; }
+  .info.sterk { fill: var(--tekst); font-weight: 700; }
+  .del { fill: color-mix(in srgb, var(--tekst) 10%, transparent); stroke: color-mix(in srgb, var(--tekst) 45%, transparent); stroke-width: 2; transition: fill .6s, stroke .6s; }
+  .mobel .del { fill: transparent; stroke-dasharray: 6 5; }
+  .del.lys { fill: var(--aksent); stroke: var(--aksent); }
+  .skil { stroke: color-mix(in srgb, var(--tekst) 35%, transparent); stroke-width: 1.5; }
+  .el text { fill: var(--dempa); font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: fill .6s, opacity .6s; }
+  .el text.lys { fill: var(--aksent-tekst); }
+  .dempa .el text:not(.lys) { opacity: .35; }
+  .dempa .del:not(.lys) { opacity: .55; }
+  .her circle.puls { fill: var(--aksent); opacity: .35; animation: puls 2.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  .her circle.kjerne { fill: var(--aksent); stroke: var(--bakgrunn); stroke-width: 6; }
+  .her text { fill: var(--tekst); font-weight: 700; font-size: 34px; text-anchor: middle; dominant-baseline: central;
+    paint-order: stroke; stroke: var(--bakgrunn); stroke-width: 8px; stroke-linejoin: round; }
+  @keyframes puls { from { transform: scale(.6); opacity: .55; } to { transform: scale(2.4); opacity: 0; } }
+  .melding { color: var(--dempa); font-size: 2.4vh; text-align: center; }
+</style>
+</head>
+<body>
+<header id="topp">
+  <div class="overlinje">Finn fram i biblioteket</div>
+  <h1 id="kategori"></h1>
+  <div class="kvar" id="kvar"></div>
+</header>
+<main><svg id="kart" xmlns="http://www.w3.org/2000/svg"></svg></main>
+<footer>
+  <span class="botnnamn"><b>Tysnes</b> folkebibliotek</span>
+  <svg class="teljar" viewBox="0 0 36 36" aria-hidden="true"><circle class="hjul-spor" cx="18" cy="18" r="15"/><circle id="hjul" cx="18" cy="18" r="15"/></svg>
+</footer>
+
+<script src="https://tysnesfolkebibliotek.github.io/infoskjerm/tema.js"></script>
+<script src="https://tysnesfolkebibliotek.github.io/infoskjerm/skrifter.js"></script>
+<script>
+"use strict";
+// ---------- Innstillingar frå adressa ----------
+const P = new URLSearchParams(location.hash.slice(1));
+const HER = P.get("her") || "";
+const SEK = Math.max(3, Number(P.get("sek")) || 7);
+const BERRE = (P.get("berre") || "").split("|").map(s => s.trim().toLowerCase()).filter(Boolean);
+const I_ROTASJON = window.parent !== window;
+const sei = b => { if (I_ROTASJON) try { parent.postMessage({ nyheiter: b }, "*"); } catch (e) {} };
+
+// ---------- Tema og skrift (same som karusellane) ----------
+(function brukTema() {
+  const id = P.get("tema") || "kveld";
+  const t = (typeof TEMA_LISTE !== "undefined" ? TEMA_LISTE : []).find(t => t.id === id);
+  const rot = document.documentElement;
+  rot.dataset.tema = id;
+  if (t && t.fargar) for (const [k, v] of Object.entries(t.fargar)) rot.style.setProperty("--" + k, v);
+  const skrift = P.get("skrift") || (t && t.skrift) || "";
+  if (skrift && typeof brukSkrift === "function") try { brukSkrift(skrift); } catch (e) {}
+})();
+
+// ---------- Romforma (cm, frå planteikninga 302_A201) ----------
+const W = 933, H = 1232, H2 = 1563;
+const VINDAUGE = [[405,517],[540,652],[700,812],[836,948],[970,1082]];
+const KOMPASS = {nord: 0, aust: 90, "sør": 180, vest: 270};
+const MOTSETT = {nord: "sør", "sør": "nord", aust: "vest", vest: "aust"};
+const LODDRETTE = [[0, 0, 1563], [933, 0, 937], [790, 937, 1232]];
+const VASSRETTE = [[0, 0, 933], [1232, 250, 790], [937, 790, 933]];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function romSvg() {
+  let s = `<rect class="golv" x="0" y="0" width="${W}" height="${H}"/><rect class="golv" x="0" y="${H}" width="563" height="${H2 - H}"/>`;
+  s += `<rect class="sjakt" x="790" y="937" width="${W - 790}" height="${H - 937}"/>`;
+  s += `<path class="vegg" d="M117 0 H0 V45 M0 155 V${H2} H563 V${H} H580 M733 ${H} H790 V937 H${W} V0 H208"/>`;
+  s += `<path class="vegg" d="M250 ${H} H430"/>`;
+  for (const [a, b] of VINDAUGE) s += `<line class="vind" x1="0" y1="${a}" x2="0" y2="${b}"/>`;
+  for (const [a, b] of [[110,231],[244,364]]) s += `<line class="vind" x1="${a}" y1="${H2}" x2="${b}" y2="${H2}"/>`;
+  s += `<path class="dorbue" d="M208 0 V91 A91 91 0 0 1 117 0"/>`;
+  s += `<path class="dorbue" d="M430 ${H} V${H - 93} A93 93 0 0 1 523 ${H}"/>`;
+  return s;
+}
+// Tekst som står fast i rommet, men blir snudd så han er lesbar på skjermen
+function romTekst(snu) {
+  const t = (x, y, tekst, kl = "") => `<text class="info ${kl}" x="${x}" y="${y}" transform="rotate(${-snu} ${x} ${y})">${tekst}</text>`;
+  return t(281, 1400, "Spelrom") + t(656, H + 45, "Inngang", "sterk") + t(861, 1085, "Trapp") +
+         t(162, -36, "Magasin") + t(-70, 100, "Meirope");
+}
+
+function delLiner(t, n) {
+  const ord = t.split(/\s+/); if (n <= 1 || ord.length < n) return [t];
+  const mål = t.length / n, liner = []; let cur = "";
+  for (const o of ord) {
+    if (cur && (cur + " " + o).length > mål * 1.15 && liner.length < n - 1) { liner.push(cur); cur = o; }
+    else cur = cur ? cur + " " + o : o;
+  }
+  liner.push(cur); return liner;
+}
+function passaTekst(t, lengd, breidd, maks, transform, kl = "") {
+  let best = null;
+  for (let n = 1; n <= 3; n++) {
+    const liner = delLiner(t, n); if (liner.length !== n && n > 1) continue;
+    const lengst = Math.max(...liner.map(l => l.length));
+    const fs = Math.min(maks, (breidd * .82) / (n * 1.15), (lengd * 1.62) / Math.max(3, lengst));
+    if (!best || fs > best.fs + 0.5) best = {fs, liner};
+  }
+  const {fs, liner} = best, lh = fs * 1.15, y0 = -(liner.length - 1) * lh / 2;
+  const spans = liner.map((l, i) => `<tspan x="0" y="${(y0 + i * lh).toFixed(1)}">${esc(l)}</tspan>`).join("");
+  return `<text class="${kl}" transform="${transform}" style="font-size:${Math.max(6, fs).toFixed(1)}px">${spans}</text>`;
+}
+function retning(e, side) {
+  const f = side === "sideA" ? -1 : 1;
+  const [lx, ly] = e.w >= e.h ? [0, f] : [f, 0];
+  const r = e.rot * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+  const dx = lx * c - ly * s, dy = lx * s + ly * c;
+  return Math.abs(dy) >= Math.abs(dx) ? (dy < 0 ? "nord" : "sør") : (dx > 0 ? "aust" : "vest");
+}
+function veggRetning(e, alle) {
+  if (e.rot % 90 !== 0) return null;
+  const snudd = e.rot % 180 === 90, bw = snudd ? e.h : e.w, bh = snudd ? e.w : e.h;
+  const v = e.x - bw / 2, hg = e.x + bw / 2, o = e.y - bh / 2, n = e.y + bh / 2;
+  const lodd = [...LODDRETTE], vass = [...VASSRETTE];
+  for (const w of alle) if (w.type === "vegg" && w.rot % 90 === 0) {
+    const sn = w.rot % 180 === 90, ww = sn ? w.h : w.w, wh = sn ? w.w : w.h;
+    if (wh > ww) lodd.push([w.x, w.y - wh / 2, w.y + wh / 2]); else vass.push([w.y, w.x - ww / 2, w.x + ww / 2]);
+  }
+  let best = null;
+  const prov = (d, mot) => { if (d >= -15 && d < 80 && (!best || d < best.d)) best = {d, mot}; };
+  if (bw >= bh) { for (const [y, x1, x2] of vass) if (x2 > v + 5 && x1 < hg - 5) { prov(o - y, "nord"); prov(y - n, "sør"); } }
+  else { for (const [x, y1, y2] of lodd) if (y2 > o + 5 && y1 < n - 5) { prov(v - x, "vest"); prov(x - hg, "aust"); } }
+  return best ? best.mot : null;
+}
+
+// ---------- Delar av samlinga ----------
+// Ein «del» er éi side av ei hylle med eit innhald. Like innhald (t.d. «Krim» på
+// hylle 9 og 10) blir lyst opp saman. «Skjønnlitteratur» og «Skjønnlitteratur
+// vaksen» blir rekna som det same.
+const nøkkel = t => t.trim().toLowerCase().replace(/\s+vaksen$/, "").replace(/\s+/g, " ");
+const kortNamn = n => { const m = n.match(/^Hylle\s*(\S+)$/i); return m ? m[1] : (n.length <= 8 ? n : ""); };
+const VEGGNAMN = {nord: "nordveggen", "sør": "sørveggen", aust: "austveggen", vest: "vestveggen"};
+
+function teiknKart(data) {
+  const alle = data.element || [];
+  const snu = HER && data.skjermar && data.skjermar[HER] ? -(KOMPASS[data.skjermar[HER].ser] || 0) : 0;
+  const kategoriar = new Map();   // nøkkel -> {namn, stader: [tekst], y, x}
+  const reg = (tekst, e, kvar) => {
+    const k = nøkkel(tekst); if (!k) return;
+    if (!kategoriar.has(k)) kategoriar.set(k, {namn: tekst.trim(), stader: [], y: e.y, x: e.x});
+    const kat = kategoriar.get(k);
+    if (tekst.trim().length > kat.namn.length) kat.namn = tekst.trim();
+    kat.stader.push(kvar); kat.y = Math.min(kat.y, e.y);
+  };
+  const tv = (mot, e) => ((KOMPASS[mot] - e.rot) % 360 + 360) % 360;
+
+  let ut = "";
+  const orden = {sone: 0, vegg: 1, rund: 2, mobel: 3, hylle: 4, dobbel: 4, tekst: 5};
+  for (const e of [...alle].sort((a, b) => orden[a.type] - orden[b.type])) {
+    if (e.type === "sone" || e.type === "tekst") continue;
+    let g = `<g class="el ${e.type}" transform="translate(${e.x} ${e.y}) rotate(${e.rot})">`;
+    if (e.type === "vegg") { ut += g + `<rect x="${-e.w / 2}" y="${-e.h / 2}" width="${e.w}" height="${e.h}" fill="var(--tekst)" opacity=".85"/></g>`; continue; }
+    if (e.type === "rund") { ut += g + `<ellipse class="del" rx="${e.w / 2}" ry="${e.h / 2}"/></g>`; continue; }
+    if (e.type === "dobbel") {
+      const langs = e.w >= e.h, lengd = langs ? e.w : e.h, halv = (langs ? e.h : e.w) / 2;
+      for (const [side, f] of [["sideA", -1], ["sideB", 1]]) {
+        const tekst = e[side] || "", k = nøkkel(tekst);
+        const x = langs ? -e.w / 2 : (f < 0 ? -e.w / 2 : 0), y = langs ? (f < 0 ? -e.h / 2 : 0) : -e.h / 2;
+        g += `<rect class="del" data-kat="${esc(k)}" x="${x}" y="${y}" width="${langs ? e.w : e.w / 2}" height="${langs ? e.h / 2 : e.h}"/>`;
+        if (tekst) {
+          const mot = MOTSETT[retning(e, side)];
+          const dx = langs ? 0 : f * halv / 2, dy = langs ? f * halv / 2 : 0;
+          g += passaTekst(tekst, lengd, halv, 20, `translate(${dx} ${dy}) rotate(${tv(mot, e)})`).replace("<text ", `<text data-kat="${esc(k)}" `);
+          reg(tekst, e, kortNamn(e.namn) ? {hylle: kortNamn(e.namn)} : e.namn.toLowerCase());
+        }
+      }
+      g += langs ? `<line class="skil" x1="${-e.w / 2}" x2="${e.w / 2}" y1="0" y2="0"/>` : `<line class="skil" y1="${-e.h / 2}" y2="${e.h / 2}" x1="0" x2="0"/>`;
+      ut += g + "</g>"; continue;
+    }
+    // Vegghylle, kube, krybbe, møblar
+    const innhald = e.type === "hylle" ? (e.sideA || (/^hylle\s/i.test(e.namn) ? "" : e.namn)) : "";
+    const k = nøkkel(innhald);
+    g += `<rect class="del" ${k ? `data-kat="${esc(k)}"` : ""} x="${-e.w / 2}" y="${-e.h / 2}" width="${e.w}" height="${e.h}" rx="${e.type === "mobel" ? 4 : 0}"/>`;
+    const vis = innhald || e.namn.replace(/\?$/, "");
+    if (vis) {
+      const mot = (e.tekstmot && KOMPASS[e.tekstmot] !== undefined) ? e.tekstmot : veggRetning(e, alle);
+      let vinkel, lengd, breidd;
+      if (mot) { vinkel = tv(mot, e); const l = vinkel % 180 === 0; lengd = l ? e.w : e.h; breidd = l ? e.h : e.w; }
+      else {
+        // Fritt element: les det rett på skjermen
+        const langs = e.w * 1.4 >= e.h; lengd = langs ? e.w : e.h; breidd = langs ? e.h : e.w;
+        vinkel = (langs ? 0 : -90);
+        const total = ((e.rot + vinkel - snu) % 360 + 360) % 360;
+        if (total > 90 && total <= 270) vinkel += 180;
+      }
+      g += passaTekst(vis, lengd, breidd, 22, `rotate(${vinkel})`).replace("<text ", k ? `<text data-kat="${esc(k)}" ` : "<text ");
+    }
+    if (k) {
+      const m = e.namn.match(/^Hylle\s*(\S+)$/i), ende = e.namn.match(/^Ende\s*(\S+)$/i);
+      const vr = veggRetning(e, alle);
+      reg(innhald, e, m ? {hylle: m[1]} : ende ? `enden av hylle ${ende[1]}` :
+          (e.sideA ? e.namn.toLowerCase() : (vr ? `langs ${VEGGNAMN[vr]}` : e.namn.toLowerCase())));
+    }
+    ut += g + "</g>";
+  }
+
+  // Du er her
+  let her = "";
+  const s = HER && data.skjermar && data.skjermar[HER];
+  if (s) her = `<g class="her" transform="translate(${s.x} ${s.y})"><circle class="puls" r="34"/><circle class="kjerne" r="22"/>` +
+               `<text transform="rotate(${-snu}) translate(0 -62)">Du er her</text></g>`;
+
+  // Snu kartet slik at retninga du ser mot skjermen, er opp
+  const m = 70, b = W + 2 * m, h = H2 + 2 * m;
+  const snudd = Math.abs(snu) % 180 === 90;
+  const vb = snudd ? [-h / 2, -b / 2, h, b] : [-b / 2, -h / 2, b, h];
+  const svg = document.getElementById("kart");
+  svg.setAttribute("viewBox", vb.join(" "));
+  svg.innerHTML = `<g id="alt" transform="rotate(${snu}) translate(${-W / 2} ${-H2 / 2})">${romSvg()}${ut}${romTekst(snu)}${her}</g>`;
+
+  // Rekkjefølgje: frå nord til sør, slik du går inn i rommet
+  let liste = [...kategoriar.entries()].sort((a, b) => a[1].y - b[1].y || a[1].x - b[1].x);
+  if (BERRE.length) liste = liste.filter(([k]) => BERRE.some(b => k.includes(nøkkel(b))));
+  return liste;
+}
+
+// ---------- Rotasjon gjennom delane ----------
+let liste = [], nr = -1, tidar = null, pausa = !I_ROTASJON ? false : true, start = 0;
+const hjul = document.getElementById("hjul"), OMKRINS = 2 * Math.PI * 15;
+hjul.style.strokeDasharray = OMKRINS;
+
+const opp = s => s.charAt(0).toUpperCase() + s.slice(1);
+// «Hylle 9 og 19», «Langs nordveggen og hylle 9» …
+function samanstill(stader) {
+  const nr = [...new Set(stader.filter(s => typeof s === "object").map(s => s.hylle))];
+  const andre = [...new Set(stader.filter(s => typeof s === "string"))];
+  const og = l => l.length <= 1 ? (l[0] || "") : l.slice(0, -1).join(", ") + " og " + l[l.length - 1];
+  const delar = [...andre];
+  if (nr.length) delar.push((nr.length > 1 ? "hylle " : "hylle ") + og(nr));
+  return opp(og(delar));
+}
+function lysOpp(i) {
+  const [k, kat] = liste[i];
+  const topp = document.getElementById("topp");
+  topp.classList.add("byt");
+  setTimeout(() => {
+    document.getElementById("kategori").textContent = kat.namn;
+    document.getElementById("kvar").textContent = samanstill(kat.stader);
+    topp.classList.remove("byt");
+  }, 450);
+  const svg = document.getElementById("kart");
+  svg.classList.add("dempa");
+  svg.querySelectorAll(".lys").forEach(n => n.classList.remove("lys"));
+  svg.querySelectorAll(`[data-kat="${CSS.escape(k)}"]`).forEach(n => n.classList.add("lys"));
+}
+function neste() {
+  if (!liste.length || pausa) return;
+  nr = (nr + 1) % liste.length;
+  lysOpp(nr);
+  start = performance.now();
+  clearTimeout(tidar); tidar = setTimeout(neste, SEK * 1000);
+}
+(function teljar() {
+  const del = pausa || !liste.length ? 0 : Math.min(1, (performance.now() - start) / (SEK * 1000));
+  hjul.style.strokeDashoffset = OMKRINS * del;
+  requestAnimationFrame(teljar);
+})();
+
+window.addEventListener("message", e => {
+  if (!e.data || !e.data.nyheiter) return;
+  if (e.data.nyheiter === "vis") { pausa = false; nr = -1; neste(); }
+  if (e.data.nyheiter === "skjul") { pausa = true; clearTimeout(tidar); }
+});
+
+// ---------- Hent kartet ----------
+const LAGRA = "hyllekart-siste";
+async function hent() {
+  try {
+    const r = await fetch("kart.json", { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    try { localStorage.setItem(LAGRA, JSON.stringify(d)); } catch (e) {}
+    return d;
+  } catch (e) {
+    try { return JSON.parse(localStorage.getItem(LAGRA)); } catch (e2) { return null; }
+  }
+}
+hent().then(data => {
+  if (!data) { document.querySelector("main").innerHTML = '<p class="melding">Fann ikkje kartet.</p>'; sei("tom"); sei("klar"); return; }
+  liste = teiknKart(data);
+  sei(liste.length ? "har" : "tom");
+  if (I_ROTASJON) sei("klar"); else neste();
+});
+</script>
+</body>
+</html>
