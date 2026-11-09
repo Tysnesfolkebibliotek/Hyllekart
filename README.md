@@ -7,7 +7,7 @@ infoskjermane, etter same mønster som [infoskjerm](https://github.com/Tysnesfol
 
 | Fil | Kva ho gjer |
 |---|---|
-| `index.html` | Kartsida for skjermane. Lyser opp éin del av samlinga om gongen (Krim, Biletbøker, Engelsk …) og syner kvar på kartet han står. Opne <https://tysnesfolkebibliotek.github.io/hyllekart/> |
+| `index.html` | Kartsida for skjermane. Lyser opp éin del av samlinga om gongen (Krim, Biletbøker, Engelsk …) og syner kvar på kartet han står. Opne <https://tysnesfolkebibliotek.github.io/Hyllekart/> |
 | `kart.json` | Sjølve kartet: hyllene, møblane og innhaldet på kvar hylleside, og kvar skjermane står |
 
 Rom, veggar, dører og vindauge er teikna etter planteikninga `302_A201` frå 2003
@@ -18,7 +18,7 @@ og ligg fast i `index.html`. Det som står i rommet, ligg i `kart.json`.
 Legg kartsida inn i `oppsett.json` i infoskjerm-repoet som ei vanleg side:
 
 ```json
-{ "namn": "Hyllekart", "url": "https://tysnesfolkebibliotek.github.io/hyllekart/#her=skjerm1&tema=fjord&sek=7", "sekund": 140 }
+{ "namn": "Hyllekart", "url": "https://tysnesfolkebibliotek.github.io/Hyllekart/#her=skjerm1&tema=fjord&sek=7", "sekund": 140 }
 ```
 
 Innstillingane står i adressa etter `#`:
