@@ -11,7 +11,7 @@
   "element": [
     {"id": "eei6treu", "type": "hylle", "namn": "Skjønnlitteratur vaksen", "x": 549, "y": 22.5, "w": 658, "h": 45, "rot": 0},
     {"id": "er27jhzc", "type": "hylle", "namn": "Faglitteratur vaksen", "x": 905, "y": 350, "w": 700, "h": 55, "rot": 90},
-    {"id": "eutlanspc", "type": "mobel", "namn": "Utlåns-PC", "x": 30, "y": 310, "w": 140, "h": 60, "rot": 90},
+    {"id": "eutlanspc", "type": "mobel", "namn": "Publikums-PC", "x": 30, "y": 310, "w": 140, "h": 60, "rot": 90},
     {"id": "estolpc", "type": "rund", "namn": "", "x": 82, "y": 310, "w": 45, "h": 45, "rot": 0},
     {"id": "ekrybbenord", "type": "hylle", "namn": "Krybbe N", "sideA": "Biletbøker", "x": 50, "y": 470, "w": 100, "h": 50, "rot": 0, "merknad": "Biletbokkrybbe nord for hylle 4"},
     {"id": "ef2ldwyr", "type": "hylle", "namn": "Hylle 4", "sideA": "Biletbøker", "x": 20, "y": 695, "w": 380, "h": 40, "rot": 90},
