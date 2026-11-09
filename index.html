@@ -330,12 +330,34 @@ function lysOpp(i) {
   const fs = 46, bw = Math.max(140, kat.namn.length * fs * .6 + 50), bh = fs * 1.6;
   // Hald lappen innanfor kanten av kartet (rekna i skjermretning)
   const r = SNU * Math.PI / 180, kant = VBB / 2 - 15;
+  // Punkt i rommet -> punkt slik skjermen viser det (midten av kartet er 0,0)
+  const skjerm = p => ({x: (p.x - W / 2) * Math.cos(r) - (p.y - H / 2) * Math.sin(r),
+                        y: (p.x - W / 2) * Math.sin(r) + (p.y - H / 2) * Math.cos(r)});
+  // Området «Du er her» tek (prikk, kjegle og namnelapp), med litt luft rundt
+  const h = STAD ? skjerm(STAD) : null;
+  const herBoks = h ? {x1: h.x - 120, x2: h.x + 120, y1: h.y - 130, y2: h.y + 110} : null;
+  const kolliderer = b => herBoks && b.x1 < herBoks.x2 && b.x2 > herBoks.x1 && b.y1 < herBoks.y2 && b.y2 > herBoks.y1;
   document.getElementById("merke").innerHTML = grupper.map(g => {
-    const sx = (g.x - W / 2) * Math.cos(r) - (g.y - H / 2) * Math.sin(r);
-    const flytt = Math.max(-kant + bw / 2 - sx, Math.min(kant - bw / 2 - sx, 0));
-    return `<g class="lapp-namn" transform="translate(${g.x} ${g.y}) rotate(${-SNU}) translate(${flytt} ${-bh / 2 - 40})">` +
+    const p = skjerm(g);
+    let flytt = Math.max(-kant + bw / 2 - p.x, Math.min(kant - bw / 2 - p.x, 0));
+    let dy = -bh / 2 - 40, under = false;   // lappen står over hylla …
+    const boks = (fx, y) => ({x1: p.x + fx - bw / 2, x2: p.x + fx + bw / 2, y1: p.y + y - bh / 2, y2: p.y + y + bh / 2});
+    if (kolliderer(boks(flytt, dy))) {
+      // … eller under, om «Du er her» er i vegen
+      if (!kolliderer(boks(flytt, bh / 2 + 40))) { dy = bh / 2 + 40; under = true; }
+      else {
+        // Elles til sida, bort frå «Du er her»
+        const mot = p.x + flytt >= h.x ? 1 : -1;
+        flytt = mot > 0 ? herBoks.x2 + bw / 2 + 10 - p.x : herBoks.x1 - bw / 2 - 10 - p.x;
+        flytt = Math.max(-kant + bw / 2 - p.x, Math.min(kant - bw / 2 - p.x, flytt));
+      }
+    }
+    const spiss = under
+      ? `M${-18 - flytt} ${-bh / 2 + 2} L${-flytt} ${-bh / 2 - 26} L${18 - flytt} ${-bh / 2 + 2} Z`
+      : `M${-18 - flytt} ${bh / 2 - 2} L${-flytt} ${bh / 2 + 26} L${18 - flytt} ${bh / 2 - 2} Z`;
+    return `<g class="lapp-namn" transform="translate(${g.x} ${g.y}) rotate(${-SNU}) translate(${flytt} ${dy})">` +
     `<rect x="${-bw / 2}" y="${-bh / 2}" width="${bw}" height="${bh}" rx="${bh / 2}"/>` +
-    `<path d="M${-18 - flytt} ${bh / 2 - 2} L${-flytt} ${bh / 2 + 26} L${18 - flytt} ${bh / 2 - 2} Z"/><text>${esc(kat.namn)}</text></g>`; }).join("");
+    `<path d="${spiss}"/><text>${esc(kat.namn)}</text></g>`; }).join("");
 }
 function neste() {
   if (!liste.length || pausa) return;
