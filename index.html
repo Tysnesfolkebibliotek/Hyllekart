@@ -61,18 +61,23 @@
   .sjakt { fill: var(--spor); }
   .info { fill: var(--dempa); font-size: 22px; text-anchor: middle; dominant-baseline: central; }
   .info.sterk { fill: var(--tekst); font-weight: 700; font-size: 32px; }
-  .del { fill: color-mix(in srgb, var(--tekst) 10%, transparent); stroke: color-mix(in srgb, var(--tekst) 45%, transparent); stroke-width: 2; transition: fill .6s, stroke .6s; }
+  .del { fill: color-mix(in srgb, var(--tekst) 16%, transparent); stroke: color-mix(in srgb, var(--tekst) 60%, transparent); stroke-width: 2; transition: fill .6s, stroke .6s; }
   .mobel .del { fill: transparent; stroke-dasharray: 6 5; }
   .del.lys { fill: var(--aksent); stroke: var(--aksent); }
   .skil { stroke: color-mix(in srgb, var(--tekst) 35%, transparent); stroke-width: 1.5; }
-  .el text { fill: var(--dempa); font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: fill .6s, opacity .6s; }
+  .el text { display: none; fill: var(--dempa); font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: fill .6s, opacity .6s; }
   .el text.lys { fill: var(--aksent-tekst); }
   .dempa .el text:not(.lys) { opacity: .8; }
   .dempa .del:not(.lys) { opacity: .55; }
   .del.lys { stroke: var(--tekst); stroke-width: 5; }
   .nal path { fill: var(--tekst); stroke: var(--bakgrunn); stroke-width: 5; }
   .nal circle { fill: var(--aksent); }
-  .landemerke { font-size: 30px; fill: var(--tekst); opacity: .8; }
+  .landemerke { font-size: 36px; fill: var(--tekst); }
+  .info { font-size: 32px !important; fill: var(--tekst) !important; }
+  .info.sterk { font-size: 38px !important; }
+  .lapp-namn rect { fill: var(--aksent); }
+  .lapp-namn path { fill: var(--aksent); }
+  .lapp-namn text { fill: var(--aksent-tekst); font-weight: 800; font-size: 46px; text-anchor: middle; dominant-baseline: central; }
   .her .kjegle { fill: var(--aksent); opacity: .22; }
   .her .lapp { fill: var(--aksent); }
   .her circle.puls { fill: var(--aksent); opacity: .35; animation: puls 2.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
@@ -141,7 +146,7 @@ function romSvg() {
 // Tekst som står fast i rommet, men blir snudd så han er lesbar på skjermen
 function romTekst(snu) {
   const t = (x, y, tekst, kl = "") => `<text class="info ${kl}" x="${x}" y="${y}" transform="rotate(${-snu} ${x} ${y})">${tekst}</text>`;
-  return t(656, H + 45, "Inngang", "sterk") +
+  return t(656, H + 50, "Inngang", "sterk") + t(400, H + 50, "Spelrom") +
          t(162, -36, "Magasin") + t(-70, 100, "Meirope");
 }
 
@@ -228,7 +233,7 @@ function teiknKart(data) {
   let ut = "";
   const orden = {sone: 0, vegg: 1, rund: 2, mobel: 3, hylle: 4, dobbel: 4, tekst: 5};
   for (const e of [...alle].sort((a, b) => orden[a.type] - orden[b.type])) {
-    if (e.type === "sone") { if (e.namn) { merkNamn(e.x, e.y, e.namn.replace(/\?$/, "")); SONER.push(e); } continue; }
+    if (e.type === "sone") { if (e.namn && e.y < H) { merkNamn(e.x, e.y, e.namn.replace(/\?$/, "")); SONER.push(e); } continue; }
     if (e.type === "tekst") continue;
     let g = `<g class="el ${e.type}" transform="translate(${e.x} ${e.y}) rotate(${e.rot})">`;
     if (e.type === "vegg") { ut += g + `<rect x="${-e.w / 2}" y="${-e.h / 2}" width="${e.w}" height="${e.h}" fill="var(--tekst)" opacity=".85"/></g>`; continue; }
@@ -280,13 +285,13 @@ function teiknKart(data) {
     `<g transform="rotate(${-snu}) translate(0 62)"><rect class="lapp" x="-95" y="-26" width="190" height="52" rx="26"/><text>Du er her</text></g></g>`;
 
   // Snu kartet slik at retninga du ser mot skjermen, er opp
-  const m = 85, b = W + 2 * m, h = H2 + 2 * m;
+  const m = 150, b = W + 2 * m, h = H + 2 * m;
   const snudd = Math.abs(snu) % 180 === 90;
   const vb = snudd ? [-h / 2, -b / 2, h, b] : [-b / 2, -h / 2, b, h];
   const svg = document.getElementById("kart");
   svg.setAttribute("viewBox", vb.join(" "));
-  svg.innerHTML = `<g id="alt" transform="rotate(${snu}) translate(${-W / 2} ${-H2 / 2})">${romSvg()}${ut}${romTekst(snu)}${landemerke}<g id="merke"></g>${her}</g>`;
-  SNU = snu;
+  svg.innerHTML = `<g id="alt" transform="rotate(${snu}) translate(${-W / 2} ${-H / 2})">${romSvg()}${ut}${romTekst(snu)}${landemerke}<g id="merke"></g>${her}</g>`;
+  SNU = snu; VBB = vb[2];
   STAD = s ? {x: s.x - STEG[0] * 70, y: s.y - STEG[1] * 70} : null;
 
   // Rekkjefølgje: frå nord til sør, slik du går inn i rommet
@@ -296,7 +301,7 @@ function teiknKart(data) {
 }
 
 // ---------- Rotasjon gjennom delane ----------
-let SNU = 0, STAD = null, LANDEMERKE = [], SONER = [];
+let VBB = 0, SNU = 0, STAD = null, LANDEMERKE = [], SONER = [];
 let liste = [], nr = -1, tidar = null, pausa = !I_ROTASJON ? false : true, start = 0;
 const hjul = document.getElementById("hjul"), OMKRINS = 2 * Math.PI * 15;
 hjul.style.strokeDasharray = OMKRINS;
@@ -316,6 +321,21 @@ function lysOpp(i) {
   svg.querySelectorAll(`[data-kat="${CSS.escape(k)}"]`).forEach(n => n.classList.add("lys"));
   // Hyllenummer i store, vassrette brikker på det som er lyst opp
   document.querySelectorAll("#oversikt li").forEach((li, j) => li.classList.toggle("no", j === i));
+  // Namnelapp over kvar stad (stader nærare enn 2,6 m blir éin lapp midt mellom)
+  const grupper = [];
+  for (const m of kat.merke) {
+    const g = grupper.find(g => Math.hypot(g.x - m.x, g.y - m.y) < 260);
+    if (g) { g.n++; g.x += (m.x - g.x) / g.n; g.y += (m.y - g.y) / g.n; } else grupper.push({x: m.x, y: m.y, n: 1});
+  }
+  const fs = 46, bw = Math.max(140, kat.namn.length * fs * .6 + 50), bh = fs * 1.6;
+  // Hald lappen innanfor kanten av kartet (rekna i skjermretning)
+  const r = SNU * Math.PI / 180, kant = VBB / 2 - 15;
+  document.getElementById("merke").innerHTML = grupper.map(g => {
+    const sx = (g.x - W / 2) * Math.cos(r) - (g.y - H / 2) * Math.sin(r);
+    const flytt = Math.max(-kant + bw / 2 - sx, Math.min(kant - bw / 2 - sx, 0));
+    return `<g class="lapp-namn" transform="translate(${g.x} ${g.y}) rotate(${-SNU}) translate(${flytt} ${-bh / 2 - 40})">` +
+    `<rect x="${-bw / 2}" y="${-bh / 2}" width="${bw}" height="${bh}" rx="${bh / 2}"/>` +
+    `<path d="M${-18 - flytt} ${bh / 2 - 2} L${-flytt} ${bh / 2 + 26} L${18 - flytt} ${bh / 2 - 2} Z"/><text>${esc(kat.namn)}</text></g>`; }).join("");
 }
 function neste() {
   if (!liste.length || pausa) return;
