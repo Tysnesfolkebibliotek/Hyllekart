@@ -37,8 +37,7 @@
   h1 { font-family: var(--skrift-overskrift, var(--skrift)); font-weight: var(--vekt-overskrift, 700);
     font-size: calc(5.2vh * var(--skala-overskrift, 1)); line-height: 1.08; margin-top: .8vh; color: var(--aksent);
     min-height: 1.1em; transition: opacity .5s; }
-  .kvar { font-size: 2.3vh; color: var(--tekst); margin-top: 1vh; min-height: 1.4em; transition: opacity .5s; }
-  .byt h1, .byt .kvar { opacity: 0; }
+  .byt h1 { opacity: 0; }
 
   main { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 1.5vw; }
   svg#kart { width: 100%; height: 100%; display: block; }
@@ -85,7 +84,6 @@
 <header id="topp">
   <div class="overlinje">Finn fram i biblioteket</div>
   <h1 id="kategori"></h1>
-  <div class="kvar" id="kvar"></div>
 </header>
 <main><svg id="kart" xmlns="http://www.w3.org/2000/svg"></svg></main>
 <footer>
@@ -289,47 +287,12 @@ const hjul = document.getElementById("hjul"), OMKRINS = 2 * Math.PI * 15;
 hjul.style.strokeDasharray = OMKRINS;
 
 const opp = s => s.charAt(0).toUpperCase() + s.slice(1);
-// Kvar er det? Sagt frå der du står framfor skjermen (kartet har synsretninga opp),
-// eller ut frå næraste landemerke når sida ikkje veit kvar ho står.
-const SEKTOR = ["Rett framfor deg", "Framme til høgre", "Til høgre for deg", "Bak deg til høgre",
-                "Bak deg", "Bak deg til venstre", "Til venstre for deg", "Framme til venstre"];
-function iSone(p) {
-  return SONER.find(z => z.rot % 180 === 0 && Math.abs(p.x - z.x) <= z.w / 2 && Math.abs(p.y - z.y) <= z.h / 2);
-}
-function skildre(kat) {
-  const pkt = kat.merke; if (!pkt.length) return "";
-  const avst = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-  const sone = pkt.every(p => iSone(p) && iSone(p) === iSone(pkt[0])) ? iSone(pkt[0]) : null;
-  const iSoneTekst = sone ? ` i ${sone.namn.toLowerCase().replace(/\?$/, "")}en`.replace(/enen$/, "en") : "";
-  if (STAD) {
-    const næraste = pkt.reduce((a, b) => avst(a, STAD) <= avst(b, STAD) ? a : b);
-    if (avst(næraste, STAD) < 120) return "Rett ved deg" + iSoneTekst;
-    // Vektoren i rommet, snudd slik skjermen viser han: opp = framover
-    const r = SNU * Math.PI / 180, dx = næraste.x - STAD.x, dy = næraste.y - STAD.y;
-    const sx = dx * Math.cos(r) - dy * Math.sin(r), sy = dx * Math.sin(r) + dy * Math.cos(r);
-    const vinkel = (Math.atan2(sx, -sy) * 180 / Math.PI + 360) % 360;   // 0 = framover, 90 = høgre
-    return SEKTOR[Math.round(vinkel / 45) % 8] + iSoneTekst;
-  }
-  if (sone) return "I " + sone.namn.toLowerCase().replace(/\?$/, "") + "en";
-  const lm = LANDEMERKE.reduce((a, b) => avst(b, pkt[0]) < avst(a, pkt[0]) ? b : a);
-  return "Ved " + lm.namn;
-}
-// (Gammal: «Hylle 9 og 19» — hyllenummera finst ikkje i rommet, så dei blir ikkje viste)
-function samanstill(stader) {
-  const nr = [...new Set(stader.filter(s => typeof s === "object").map(s => s.hylle))];
-  const andre = [...new Set(stader.filter(s => typeof s === "string"))];
-  const og = l => l.length <= 1 ? (l[0] || "") : l.slice(0, -1).join(", ") + " og " + l[l.length - 1];
-  const delar = [...andre];
-  if (nr.length) delar.push((nr.length > 1 ? "hylle " : "hylle ") + og(nr));
-  return opp(og(delar));
-}
 function lysOpp(i) {
   const [k, kat] = liste[i];
   const topp = document.getElementById("topp");
   topp.classList.add("byt");
   setTimeout(() => {
     document.getElementById("kategori").textContent = kat.namn;
-    document.getElementById("kvar").textContent = skildre(kat);
     topp.classList.remove("byt");
   }, 450);
   const svg = document.getElementById("kart");
