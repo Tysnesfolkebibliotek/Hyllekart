@@ -4,7 +4,7 @@
   "rom": {"breidd": 933, "lengd": 1232, "eining": "cm", "kjelde": "Planteikning 302_A201 (2003)"},
 
   "skjermar": {
-    "skjerm1": {"namn": "tysnes-infoskjerm (sakprosa)", "x": 870, "y": 160, "ser": "aust"},
+    "skjerm1": {"namn": "tysnes-infoskjerm (sakprosa)", "x": 870, "y": 350, "ser": "aust"},
     "skjerm2": {"namn": "tysnes-infoskjerm-2 (engelsk)", "x": 290, "y": 1100, "ser": "vest"}
   },
 

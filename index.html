@@ -133,7 +133,7 @@ function romSvg() {
 // Tekst som står fast i rommet, men blir snudd så han er lesbar på skjermen
 function romTekst(snu) {
   const t = (x, y, tekst, kl = "") => `<text class="info ${kl}" x="${x}" y="${y}" transform="rotate(${-snu} ${x} ${y})">${tekst}</text>`;
-  return t(281, 1400, "Spelrom") + t(656, H + 45, "Inngang", "sterk") + t(861, 1085, "Trapp") +
+  return t(281, 1400, "Spelrom") + t(656, H + 45, "Inngang", "sterk") +
          t(162, -36, "Magasin") + t(-70, 100, "Meirope");
 }
 
