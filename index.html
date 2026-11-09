@@ -58,7 +58,7 @@
   .dorbue { fill: none; stroke: var(--dempa); stroke-width: 2.5; opacity: .6; }
   .sjakt { fill: var(--spor); }
   .info { fill: var(--dempa); font-size: 22px; text-anchor: middle; dominant-baseline: central; }
-  .info.sterk { fill: var(--tekst); font-weight: 700; }
+  .info.sterk { fill: var(--tekst); font-weight: 700; font-size: 32px; }
   .del { fill: color-mix(in srgb, var(--tekst) 10%, transparent); stroke: color-mix(in srgb, var(--tekst) 45%, transparent); stroke-width: 2; transition: fill .6s, stroke .6s; }
   .mobel .del { fill: transparent; stroke-dasharray: 6 5; }
   .del.lys { fill: var(--aksent); stroke: var(--aksent); }
@@ -67,11 +67,17 @@
   .el text.lys { fill: var(--aksent-tekst); }
   .dempa .el text:not(.lys) { opacity: .35; }
   .dempa .del:not(.lys) { opacity: .55; }
+  .del.lys { stroke: var(--tekst); stroke-width: 5; }
+  .nrmerke circle { fill: var(--tekst); stroke: var(--bakgrunn); stroke-width: 6; }
+  .nrmerke text { fill: var(--bakgrunn); font-weight: 800; font-size: 46px; text-anchor: middle; dominant-baseline: central; }
+  .landemerke { font-size: 30px; fill: var(--tekst); opacity: .8; }
+  .her .kjegle { fill: var(--aksent); opacity: .22; }
+  .her .lapp { fill: var(--aksent); }
   .her circle.puls { fill: var(--aksent); opacity: .35; animation: puls 2.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
   .her circle.kjerne { fill: var(--aksent); stroke: var(--bakgrunn); stroke-width: 6; }
-  .her text { fill: var(--tekst); font-weight: 700; font-size: 34px; text-anchor: middle; dominant-baseline: central;
-    paint-order: stroke; stroke: var(--bakgrunn); stroke-width: 8px; stroke-linejoin: round; }
+  .her text { fill: var(--aksent-tekst); font-weight: 800; font-size: 32px; text-anchor: middle; dominant-baseline: central; }
   @keyframes puls { from { transform: scale(.6); opacity: .55; } to { transform: scale(2.4); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .her circle.puls { animation: none; } }
   .melding { color: var(--dempa); font-size: 2.4vh; text-align: center; }
 </style>
 </head>
@@ -133,7 +139,7 @@ function romSvg() {
 // Tekst som står fast i rommet, men blir snudd så han er lesbar på skjermen
 function romTekst(snu) {
   const t = (x, y, tekst, kl = "") => `<text class="info ${kl}" x="${x}" y="${y}" transform="rotate(${-snu} ${x} ${y})">${tekst}</text>`;
-  return t(281, 1400, "Spelrom") + t(656, H + 45, "Inngang", "sterk") +
+  return t(656, H + 45, "Inngang", "sterk") +
          t(162, -36, "Magasin") + t(-70, 100, "Meirope");
 }
 
@@ -193,19 +199,27 @@ function teiknKart(data) {
   const alle = data.element || [];
   const snu = HER && data.skjermar && data.skjermar[HER] ? -(KOMPASS[data.skjermar[HER].ser] || 0) : 0;
   const kategoriar = new Map();   // nøkkel -> {namn, stader: [tekst], y, x}
-  const reg = (tekst, e, kvar) => {
+  const reg = (tekst, e, kvar, merke) => {
     const k = nøkkel(tekst); if (!k) return;
-    if (!kategoriar.has(k)) kategoriar.set(k, {namn: tekst.trim(), stader: [], y: e.y, x: e.x});
+    if (!kategoriar.has(k)) kategoriar.set(k, {namn: tekst.trim(), stader: [], merke: [], y: e.y, x: e.x});
     const kat = kategoriar.get(k);
     if (tekst.trim().length > kat.namn.length) kat.namn = tekst.trim();
     kat.stader.push(kvar); kat.y = Math.min(kat.y, e.y);
+    if (merke) kat.merke.push(merke);
   };
+  // Punkt i rommet for eit punkt (lx, ly) inne i elementet
+  const iRommet = (e, lx, ly) => { const r = e.rot * Math.PI / 180;
+    return {x: e.x + lx * Math.cos(r) - ly * Math.sin(r), y: e.y + lx * Math.sin(r) + ly * Math.cos(r)}; };
+  // Namn på faste punkt i rommet (sone, skranke …). Alltid vassrett på skjermen.
+  let landemerke = "";
+  const merkNamn = (x, y, t) => { landemerke += `<text class="info landemerke" x="${x}" y="${y}" transform="rotate(${-snu} ${x} ${y})">${esc(t)}</text>`; };
   const tv = (mot, e) => ((KOMPASS[mot] - e.rot) % 360 + 360) % 360;
 
   let ut = "";
   const orden = {sone: 0, vegg: 1, rund: 2, mobel: 3, hylle: 4, dobbel: 4, tekst: 5};
   for (const e of [...alle].sort((a, b) => orden[a.type] - orden[b.type])) {
-    if (e.type === "sone" || e.type === "tekst") continue;
+    if (e.type === "sone") { if (e.namn) merkNamn(e.x, e.y, e.namn.replace(/\?$/, "")); continue; }
+    if (e.type === "tekst") continue;
     let g = `<g class="el ${e.type}" transform="translate(${e.x} ${e.y}) rotate(${e.rot})">`;
     if (e.type === "vegg") { ut += g + `<rect x="${-e.w / 2}" y="${-e.h / 2}" width="${e.w}" height="${e.h}" fill="var(--tekst)" opacity=".85"/></g>`; continue; }
     if (e.type === "rund") { ut += g + `<ellipse class="del" rx="${e.w / 2}" ry="${e.h / 2}"/></g>`; continue; }
@@ -216,10 +230,9 @@ function teiknKart(data) {
         const x = langs ? -e.w / 2 : (f < 0 ? -e.w / 2 : 0), y = langs ? (f < 0 ? -e.h / 2 : 0) : -e.h / 2;
         g += `<rect class="del" data-kat="${esc(k)}" x="${x}" y="${y}" width="${langs ? e.w : e.w / 2}" height="${langs ? e.h / 2 : e.h}"/>`;
         if (tekst) {
-          const mot = MOTSETT[retning(e, side)];
           const dx = langs ? 0 : f * halv / 2, dy = langs ? f * halv / 2 : 0;
-          g += passaTekst(tekst, lengd, halv, 20, `translate(${dx} ${dy}) rotate(${tv(mot, e)})`).replace("<text ", `<text data-kat="${esc(k)}" `);
-          reg(tekst, e, kortNamn(e.namn) ? {hylle: kortNamn(e.namn)} : e.namn.toLowerCase());
+          const nr = kortNamn(e.namn);
+          reg(tekst, e, nr ? {hylle: nr} : e.namn.toLowerCase(), {...iRommet(e, dx, dy), nr});
         }
       }
       g += langs ? `<line class="skil" x1="${-e.w / 2}" x2="${e.w / 2}" y1="0" y2="0"/>` : `<line class="skil" y1="${-e.h / 2}" y2="${e.h / 2}" x1="0" x2="0"/>`;
@@ -229,25 +242,13 @@ function teiknKart(data) {
     const innhald = e.type === "hylle" ? (e.sideA || (/^hylle\s/i.test(e.namn) ? "" : e.namn)) : "";
     const k = nøkkel(innhald);
     g += `<rect class="del" ${k ? `data-kat="${esc(k)}"` : ""} x="${-e.w / 2}" y="${-e.h / 2}" width="${e.w}" height="${e.h}" rx="${e.type === "mobel" ? 4 : 0}"/>`;
-    const vis = innhald || e.namn.replace(/\?$/, "");
-    if (vis) {
-      const mot = (e.tekstmot && KOMPASS[e.tekstmot] !== undefined) ? e.tekstmot : veggRetning(e, alle);
-      let vinkel, lengd, breidd;
-      if (mot) { vinkel = tv(mot, e); const l = vinkel % 180 === 0; lengd = l ? e.w : e.h; breidd = l ? e.h : e.w; }
-      else {
-        // Fritt element: les det rett på skjermen
-        const langs = e.w * 1.4 >= e.h; lengd = langs ? e.w : e.h; breidd = langs ? e.h : e.w;
-        vinkel = (langs ? 0 : -90);
-        const total = ((e.rot + vinkel - snu) % 360 + 360) % 360;
-        if (total > 90 && total <= 270) vinkel += 180;
-      }
-      g += passaTekst(vis, lengd, breidd, 22, `rotate(${vinkel})`).replace("<text ", k ? `<text data-kat="${esc(k)}" ` : "<text ");
-    }
+    if (e.type === "mobel" && /^(skranke|utlånsautomat)/i.test(e.namn)) merkNamn(e.x, e.y, e.namn.replace(/\?$/, ""));
     if (k) {
       const m = e.namn.match(/^Hylle\s*(\S+)$/i), ende = e.namn.match(/^Ende\s*(\S+)$/i);
       const vr = veggRetning(e, alle);
       reg(innhald, e, m ? {hylle: m[1]} : ende ? `enden av hylle ${ende[1]}` :
-          (e.sideA ? e.namn.toLowerCase() : (vr ? `langs ${VEGGNAMN[vr]}` : e.namn.toLowerCase())));
+          (e.sideA ? e.namn.toLowerCase() : (vr ? `langs ${VEGGNAMN[vr]}` : e.namn.toLowerCase())),
+          {x: e.x, y: e.y, nr: m ? m[1] : ""});
     }
     ut += g + "</g>";
   }
@@ -255,16 +256,22 @@ function teiknKart(data) {
   // Du er her
   let her = "";
   const s = HER && data.skjermar && data.skjermar[HER];
-  if (s) her = `<g class="her" transform="translate(${s.x} ${s.y})"><circle class="puls" r="34"/><circle class="kjerne" r="22"/>` +
-               `<text transform="rotate(${-snu}) translate(0 -62)">Du er her</text></g>`;
+  // Prikk + kjegle som viser kva veg du ser (alltid opp på skjermen), og namnelapp
+  // Du står om lag 70 cm framfor skjermen
+  const STEG = {nord: [0, -1], aust: [1, 0], "sør": [0, 1], vest: [-1, 0]}[s ? s.ser : "nord"] || [0, -1];
+  if (s) her = `<g class="her" transform="translate(${s.x - STEG[0] * 70} ${s.y - STEG[1] * 70})">` +
+    `<path class="kjegle" transform="rotate(${KOMPASS[s.ser] || 0})" d="M0 0 L-42 -85 A95 95 0 0 1 42 -85 Z"/>` +
+    `<circle class="puls" r="40"/><circle class="kjerne" r="26"/>` +
+    `<g transform="rotate(${-snu}) translate(0 62)"><rect class="lapp" x="-95" y="-26" width="190" height="52" rx="26"/><text>Du er her</text></g></g>`;
 
   // Snu kartet slik at retninga du ser mot skjermen, er opp
-  const m = 70, b = W + 2 * m, h = H2 + 2 * m;
+  const m = 100, b = W + 2 * m, h = H2 + 2 * m;
   const snudd = Math.abs(snu) % 180 === 90;
   const vb = snudd ? [-h / 2, -b / 2, h, b] : [-b / 2, -h / 2, b, h];
   const svg = document.getElementById("kart");
   svg.setAttribute("viewBox", vb.join(" "));
-  svg.innerHTML = `<g id="alt" transform="rotate(${snu}) translate(${-W / 2} ${-H2 / 2})">${romSvg()}${ut}${romTekst(snu)}${her}</g>`;
+  svg.innerHTML = `<g id="alt" transform="rotate(${snu}) translate(${-W / 2} ${-H2 / 2})">${romSvg()}${ut}${romTekst(snu)}${landemerke}<g id="merke"></g>${her}</g>`;
+  SNU = snu;
 
   // Rekkjefølgje: frå nord til sør, slik du går inn i rommet
   let liste = [...kategoriar.entries()].sort((a, b) => a[1].y - b[1].y || a[1].x - b[1].x);
@@ -273,6 +280,7 @@ function teiknKart(data) {
 }
 
 // ---------- Rotasjon gjennom delane ----------
+let SNU = 0;
 let liste = [], nr = -1, tidar = null, pausa = !I_ROTASJON ? false : true, start = 0;
 const hjul = document.getElementById("hjul"), OMKRINS = 2 * Math.PI * 15;
 hjul.style.strokeDasharray = OMKRINS;
@@ -300,6 +308,10 @@ function lysOpp(i) {
   svg.classList.add("dempa");
   svg.querySelectorAll(".lys").forEach(n => n.classList.remove("lys"));
   svg.querySelectorAll(`[data-kat="${CSS.escape(k)}"]`).forEach(n => n.classList.add("lys"));
+  // Hyllenummer i store, vassrette brikker på det som er lyst opp
+  const sett = new Set();
+  document.getElementById("merke").innerHTML = kat.merke.filter(m => m.nr && !sett.has(m.nr) && sett.add(m.nr))
+    .map(m => `<g class="nrmerke" transform="translate(${m.x} ${m.y}) rotate(${-SNU})"><circle r="40"/><text>${esc(m.nr)}</text></g>`).join("");
 }
 function neste() {
   if (!liste.length || pausa) return;
