@@ -74,6 +74,8 @@
   .nal circle { fill: var(--aksent); }
   .landemerke { font-size: 36px; fill: var(--tekst); }
   .info { font-size: 32px !important; fill: var(--tekst) !important; }
+  /* Kant i bakgrunnsfargen, så tekst aldri forsvinn bak veggar og hyller */
+  .info, .landemerke { paint-order: stroke; stroke: var(--bakgrunn); stroke-width: 10px; stroke-linejoin: round; }
   .info.sterk { font-size: 38px !important; }
   .lapp-namn rect { fill: var(--aksent); }
   .lapp-namn path { fill: var(--aksent); }
@@ -146,7 +148,7 @@ function romSvg() {
 // Tekst som står fast i rommet, men blir snudd så han er lesbar på skjermen
 function romTekst(snu) {
   const t = (x, y, tekst, kl = "") => `<text class="info ${kl}" x="${x}" y="${y}" transform="rotate(${-snu} ${x} ${y})">${tekst}</text>`;
-  return t(656, H + 50, "Inngang", "sterk") + t(400, H + 50, "Spelrom") +
+  return t(656, H + 50, "Inngang", "sterk") + t(400, H + 85, "Spelrom") +
          t(162, -36, "Magasin") + t(-70, 100, "Meirope");
 }
 
