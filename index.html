@@ -68,8 +68,8 @@
   .dempa .el text:not(.lys) { opacity: .35; }
   .dempa .del:not(.lys) { opacity: .55; }
   .del.lys { stroke: var(--tekst); stroke-width: 5; }
-  .nrmerke circle { fill: var(--tekst); stroke: var(--bakgrunn); stroke-width: 6; }
-  .nrmerke text { fill: var(--bakgrunn); font-weight: 800; font-size: 46px; text-anchor: middle; dominant-baseline: central; }
+  .nal path { fill: var(--tekst); stroke: var(--bakgrunn); stroke-width: 5; }
+  .nal circle { fill: var(--aksent); }
   .landemerke { font-size: 30px; fill: var(--tekst); opacity: .8; }
   .her .kjegle { fill: var(--aksent); opacity: .22; }
   .her .lapp { fill: var(--aksent); }
@@ -212,13 +212,15 @@ function teiknKart(data) {
     return {x: e.x + lx * Math.cos(r) - ly * Math.sin(r), y: e.y + lx * Math.sin(r) + ly * Math.cos(r)}; };
   // Namn på faste punkt i rommet (sone, skranke …). Alltid vassrett på skjermen.
   let landemerke = "";
-  const merkNamn = (x, y, t) => { landemerke += `<text class="info landemerke" x="${x}" y="${y}" transform="rotate(${-snu} ${x} ${y})">${esc(t)}</text>`; };
+  LANDEMERKE = [{x: 656, y: H, namn: "inngangen"}];
+  SONER = [];
+  const merkNamn = (x, y, t) => { LANDEMERKE.push({x, y, namn: t.toLowerCase().replace(/^skranke$/, "skranken").replace(/^utlånsautomat$/, "utlånsautomaten")}); landemerke += `<text class="info landemerke" x="${x}" y="${y}" transform="rotate(${-snu} ${x} ${y})">${esc(t)}</text>`; };
   const tv = (mot, e) => ((KOMPASS[mot] - e.rot) % 360 + 360) % 360;
 
   let ut = "";
   const orden = {sone: 0, vegg: 1, rund: 2, mobel: 3, hylle: 4, dobbel: 4, tekst: 5};
   for (const e of [...alle].sort((a, b) => orden[a.type] - orden[b.type])) {
-    if (e.type === "sone") { if (e.namn) merkNamn(e.x, e.y, e.namn.replace(/\?$/, "")); continue; }
+    if (e.type === "sone") { if (e.namn) { merkNamn(e.x, e.y, e.namn.replace(/\?$/, "")); SONER.push(e); } continue; }
     if (e.type === "tekst") continue;
     let g = `<g class="el ${e.type}" transform="translate(${e.x} ${e.y}) rotate(${e.rot})">`;
     if (e.type === "vegg") { ut += g + `<rect x="${-e.w / 2}" y="${-e.h / 2}" width="${e.w}" height="${e.h}" fill="var(--tekst)" opacity=".85"/></g>`; continue; }
@@ -272,6 +274,7 @@ function teiknKart(data) {
   svg.setAttribute("viewBox", vb.join(" "));
   svg.innerHTML = `<g id="alt" transform="rotate(${snu}) translate(${-W / 2} ${-H2 / 2})">${romSvg()}${ut}${romTekst(snu)}${landemerke}<g id="merke"></g>${her}</g>`;
   SNU = snu;
+  STAD = s ? {x: s.x - STEG[0] * 70, y: s.y - STEG[1] * 70} : null;
 
   // Rekkjefølgje: frå nord til sør, slik du går inn i rommet
   let liste = [...kategoriar.entries()].sort((a, b) => a[1].y - b[1].y || a[1].x - b[1].x);
@@ -280,13 +283,38 @@ function teiknKart(data) {
 }
 
 // ---------- Rotasjon gjennom delane ----------
-let SNU = 0;
+let SNU = 0, STAD = null, LANDEMERKE = [], SONER = [];
 let liste = [], nr = -1, tidar = null, pausa = !I_ROTASJON ? false : true, start = 0;
 const hjul = document.getElementById("hjul"), OMKRINS = 2 * Math.PI * 15;
 hjul.style.strokeDasharray = OMKRINS;
 
 const opp = s => s.charAt(0).toUpperCase() + s.slice(1);
-// «Hylle 9 og 19», «Langs nordveggen og hylle 9» …
+// Kvar er det? Sagt frå der du står framfor skjermen (kartet har synsretninga opp),
+// eller ut frå næraste landemerke når sida ikkje veit kvar ho står.
+const SEKTOR = ["Rett framfor deg", "Framme til høgre", "Til høgre for deg", "Bak deg til høgre",
+                "Bak deg", "Bak deg til venstre", "Til venstre for deg", "Framme til venstre"];
+function iSone(p) {
+  return SONER.find(z => z.rot % 180 === 0 && Math.abs(p.x - z.x) <= z.w / 2 && Math.abs(p.y - z.y) <= z.h / 2);
+}
+function skildre(kat) {
+  const pkt = kat.merke; if (!pkt.length) return "";
+  const avst = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const sone = pkt.every(p => iSone(p) && iSone(p) === iSone(pkt[0])) ? iSone(pkt[0]) : null;
+  const iSoneTekst = sone ? ` i ${sone.namn.toLowerCase().replace(/\?$/, "")}en`.replace(/enen$/, "en") : "";
+  if (STAD) {
+    const næraste = pkt.reduce((a, b) => avst(a, STAD) <= avst(b, STAD) ? a : b);
+    if (avst(næraste, STAD) < 120) return "Rett ved deg" + iSoneTekst;
+    // Vektoren i rommet, snudd slik skjermen viser han: opp = framover
+    const r = SNU * Math.PI / 180, dx = næraste.x - STAD.x, dy = næraste.y - STAD.y;
+    const sx = dx * Math.cos(r) - dy * Math.sin(r), sy = dx * Math.sin(r) + dy * Math.cos(r);
+    const vinkel = (Math.atan2(sx, -sy) * 180 / Math.PI + 360) % 360;   // 0 = framover, 90 = høgre
+    return SEKTOR[Math.round(vinkel / 45) % 8] + iSoneTekst;
+  }
+  if (sone) return "I " + sone.namn.toLowerCase().replace(/\?$/, "") + "en";
+  const lm = LANDEMERKE.reduce((a, b) => avst(b, pkt[0]) < avst(a, pkt[0]) ? b : a);
+  return "Ved " + lm.namn;
+}
+// (Gammal: «Hylle 9 og 19» — hyllenummera finst ikkje i rommet, så dei blir ikkje viste)
 function samanstill(stader) {
   const nr = [...new Set(stader.filter(s => typeof s === "object").map(s => s.hylle))];
   const andre = [...new Set(stader.filter(s => typeof s === "string"))];
@@ -301,7 +329,7 @@ function lysOpp(i) {
   topp.classList.add("byt");
   setTimeout(() => {
     document.getElementById("kategori").textContent = kat.namn;
-    document.getElementById("kvar").textContent = samanstill(kat.stader);
+    document.getElementById("kvar").textContent = skildre(kat);
     topp.classList.remove("byt");
   }, 450);
   const svg = document.getElementById("kart");
@@ -309,9 +337,11 @@ function lysOpp(i) {
   svg.querySelectorAll(".lys").forEach(n => n.classList.remove("lys"));
   svg.querySelectorAll(`[data-kat="${CSS.escape(k)}"]`).forEach(n => n.classList.add("lys"));
   // Hyllenummer i store, vassrette brikker på det som er lyst opp
-  const sett = new Set();
-  document.getElementById("merke").innerHTML = kat.merke.filter(m => m.nr && !sett.has(m.nr) && sett.add(m.nr))
-    .map(m => `<g class="nrmerke" transform="translate(${m.x} ${m.y}) rotate(${-SNU})"><circle r="40"/><text>${esc(m.nr)}</text></g>`).join("");
+  // Ei nål over kvar stad (punkt nærare enn 1,2 m blir slått saman)
+  const nåler = [];
+  for (const m of kat.merke) if (!nåler.some(n => Math.hypot(n.x - m.x, n.y - m.y) < 120)) nåler.push(m);
+  document.getElementById("merke").innerHTML = nåler.map(m =>
+    `<g class="nal" transform="translate(${m.x} ${m.y}) rotate(${-SNU})"><path d="M0 0 C-12 -30 -34 -46 -34 -72 A34 34 0 1 1 34 -72 C34 -46 12 -30 0 0 Z"/><circle cy="-72" r="13"/></g>`).join("");
 }
 function neste() {
   if (!liste.length || pausa) return;
