@@ -350,8 +350,10 @@ function neste() {
   requestAnimationFrame(teljar);
 })();
 
+let fekkBeskjed = false;
 window.addEventListener("message", e => {
   if (!e.data || !e.data.nyheiter) return;
+  fekkBeskjed = true;
   if (e.data.nyheiter === "vis") { pausa = false; nr = -1; neste(); }
   if (e.data.nyheiter === "skjul") { pausa = true; clearTimeout(tidar); }
 });
@@ -374,7 +376,12 @@ hent().then(data => {
   liste = teiknKart(data);
   document.getElementById("oversikt").innerHTML = liste.map(([, k]) => `<li>${esc(k.namn)}</li>`).join("");
   sei(liste.length ? "har" : "tom");
-  if (I_ROTASJON) sei("klar"); else neste();
+  if (I_ROTASJON) {
+    sei("klar");
+    // I ei ramme som ikkje er rotasjon.html (t.d. førehandsvisinga på oversikta)
+    // kjem det aldri «vis». Då startar vi sjølve.
+    setTimeout(() => { if (!fekkBeskjed) { pausa = false; neste(); } }, 1500);
+  } else neste();
 });
 </script>
 </body>
